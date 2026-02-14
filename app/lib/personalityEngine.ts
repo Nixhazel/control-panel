@@ -1,9 +1,23 @@
 /**
  * SHL-style personality trait scoring from behavior (0–100 each).
+ * Stress tolerance uses Phase 3 only; consistency uses variance of reaction times.
  */
 
-import type { ScoreState, PersonalityTraits } from "@/types/gameTypes";
-import { getAccuracyPercent, getAverageReactionMs } from "./scoringEngine";
+import type {
+  ScoreState,
+  PersonalityTraits,
+  FinalScoreData,
+  PassFailStatus,
+  OperatorClassification,
+} from "@/types/gameTypes";
+import {
+  getAccuracyPercent,
+  getAverageReactionMs,
+  getReactionTimes,
+} from "./scoringEngine";
+
+const PHASE_3_START_SECONDS = 320;
+const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
 
 /**
  * Vigilance: reaction speed. Fast reactions -> high. Slow -> low.
@@ -19,14 +33,14 @@ function scoreVigilance(scoreState: ScoreState): number {
   const maxPenalty = 2500;
   const penalty = Math.min(avg, maxPenalty);
   const score = 100 - (penalty / maxPenalty) * 100;
-  return Math.round(Math.max(0, Math.min(100, score)));
+  return clamp(score);
 }
 
 /**
  * Rule compliance: accuracy %.
  */
 function scoreCompliance(scoreState: ScoreState): number {
-  return getAccuracyPercent(scoreState);
+  return clamp(getAccuracyPercent(scoreState));
 }
 
 /**
@@ -37,40 +51,40 @@ function scoreImpulsivity(scoreState: ScoreState): number {
   const total = scoreState.correctActions + scoreState.incorrectActions + scoreState.unnecessaryActions;
   if (total === 0) return 0;
   const ratio = scoreState.unnecessaryActions / total;
-  return Math.round(Math.min(100, ratio * 200));
+  return clamp(Math.min(100, ratio * 200));
 }
 
 /**
- * Stress tolerance: performance during multi-red events.
- * Use segments where multiple events were possible; accuracy in those segments.
- * Simplified: use overall accuracy under pressure as proxy (missed + wrong vs correct).
+ * Stress tolerance: performance during Phase 3 only (high difficulty).
+ * Accuracy during 320–480s elapsed.
  */
 function scoreStressTolerance(scoreState: ScoreState): number {
-  const total = scoreState.correctActions + scoreState.incorrectActions + scoreState.missedActions;
-  if (total === 0) return 50;
-  const good = scoreState.correctActions;
-  return Math.round((good / total) * 100);
+  const phase3 = scoreState.actionHistory.filter(
+    (a) => a.elapsedSeconds != null && a.elapsedSeconds >= PHASE_3_START_SECONDS
+  );
+  const required = phase3.filter((a) => a.wasRequired);
+  if (required.length === 0) return 50;
+  const correct = required.filter((a) => a.correct).length;
+  return clamp((correct / required.length) * 100);
 }
 
 /**
- * Consistency: score variance. Lower variance -> higher consistency.
- * Use variance of per-action score deltas (simplified: use streak or variance of correct/incorrect).
+ * Consistency: variance in reaction times. Low variance = high consistency.
  */
 function scoreConsistency(scoreState: ScoreState): number {
-  const history = scoreState.actionHistory.filter((a) => a.wasRequired || !a.wasRequired);
-  if (history.length < 2) return 50;
-  const correctSequence = history.map((a) => (a.correct ? 1 : 0));
-  let changes = 0;
-  for (let i = 1; i < correctSequence.length; i++) {
-    if (correctSequence[i] !== correctSequence[i - 1]) changes++;
-  }
-  const changeRatio = changes / (correctSequence.length - 1);
-  const consistency = 100 - changeRatio * 100;
-  return Math.round(Math.max(0, Math.min(100, consistency)));
+  const times = getReactionTimes(scoreState);
+  if (times.length < 2) return 50;
+  const mean = times.reduce((a, b) => a + b, 0) / times.length;
+  const variance =
+    times.reduce((s, t) => s + (t - mean) ** 2, 0) / times.length;
+  const stdDev = Math.sqrt(variance);
+  const maxStdDev = 1500;
+  const consistency = 100 - Math.min(1, stdDev / maxStdDev) * 100;
+  return clamp(consistency);
 }
 
 /**
- * Compute all personality traits from final score state.
+ * Compute all personality traits from final score state (all clamped 0–100).
  */
 export function computePersonality(scoreState: ScoreState): PersonalityTraits {
   return {
@@ -89,8 +103,6 @@ const PASS = {
   VIGILANCE_MIN: 60,
   SCORE_MIN: 300,
 } as const;
-
-import type { OperatorClassification } from "@/types/gameTypes";
 
 /**
  * Pass if: accuracy ≥ 70%, impulsivity ≤ 40, vigilance ≥ 60, score ≥ 300.
@@ -122,10 +134,39 @@ export function getClassification(
       return "High Risk Operator";
     return "Needs Improvement";
   }
-  if (accuracy >= 90 && personality.vigilance >= 80 && scoreState.totalScore >= 450)
-    return "Excellent Operator";
-  if (accuracy >= 70 && scoreState.totalScore >= 300)
-    return "Competent Operator";
-  return "Needs Improvement";
+  if (scoreState.totalScore >= 500) return "Excellent Operator";
+  if (scoreState.totalScore >= 400) return "Competent Operator";
+  if (scoreState.totalScore >= 300) return "Needs Improvement";
+  return "High Risk Operator";
+}
+
+/**
+ * Classify from final score + personality data. Returns status and classification string.
+ */
+export function classifyOperator(
+  scoreData: FinalScoreData,
+  personalityData: PersonalityTraits
+): { status: PassFailStatus; classification: OperatorClassification } {
+  const passed =
+    scoreData.accuracy >= PASS.ACCURACY_MIN &&
+    personalityData.vigilance >= PASS.VIGILANCE_MIN &&
+    personalityData.impulsivity <= PASS.IMPULSIVITY_MAX &&
+    scoreData.finalScore >= PASS.SCORE_MIN;
+  const status: PassFailStatus = passed ? "PASS" : "FAIL";
+  if (!passed) {
+    if (
+      personalityData.impulsivity > 60 ||
+      scoreData.finalScore < 0
+    )
+      return { status, classification: "High Risk Operator" };
+    return { status, classification: "Needs Improvement" };
+  }
+  if (scoreData.finalScore >= 500)
+    return { status, classification: "Excellent Operator" };
+  if (scoreData.finalScore >= 400)
+    return { status, classification: "Competent Operator" };
+  if (scoreData.finalScore >= 300)
+    return { status, classification: "Needs Improvement" };
+  return { status, classification: "High Risk Operator" };
 }
 

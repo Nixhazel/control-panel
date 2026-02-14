@@ -24,3 +24,30 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Panel red zone glow + subtle pulse */
+.panel-red-glow {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.25);
+}
+.panel-red-glow.pulse-red {
+  animation: pulse-red 2s ease-in-out infinite;
+}
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.25); }
+  50% { box-shadow: 0 0 28px rgba(239, 68, 68, 0.45); }
+}
+
+/* Button press feedback */
+.btn-press:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* Critical overlap shake */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+.shake-critical {
+  animation: shake 0.3s ease-in-out;
+}

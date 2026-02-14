@@ -19,8 +19,14 @@ export default function GeneratorPanel({
   const isRed = value > RED_ZONE.GENERATOR_HIGH;
   const pct = Math.max(0, Math.min(100, value));
 
+  const inDanger = isLow || isRed;
   return (
-    <div className="rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-3 shadow-lg">
+    <div
+      className={
+        "rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-3 shadow-lg transition-shadow " +
+        (inDanger ? "panel-red-glow pulse-red" : "")
+      }
+    >
       <div className="mb-2 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
         Generator
       </div>
@@ -61,7 +67,7 @@ export default function GeneratorPanel({
           type="button"
           onClick={onOn}
           disabled={disabled}
-          className="flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
+          className="btn-press flex-1 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
         >
           ON
         </button>
@@ -69,7 +75,7 @@ export default function GeneratorPanel({
           type="button"
           onClick={onStabilize}
           disabled={disabled}
-          className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+          className="btn-press flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
         >
           STABILIZE
         </button>

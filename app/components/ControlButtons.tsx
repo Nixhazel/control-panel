@@ -24,7 +24,7 @@ export default function ControlButtons({
           type="button"
           onClick={onRecentre}
           disabled={disabled}
-          className="flex-1 rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
+          className="btn-press flex-1 rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
         >
           RECENTRE
         </button>
@@ -32,7 +32,7 @@ export default function ControlButtons({
           type="button"
           onClick={onSystemReset}
           disabled={resetDisabled}
-          className="flex-1 rounded-lg bg-rose-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-rose-600 disabled:opacity-50"
+          className="btn-press flex-1 rounded-lg bg-rose-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-rose-600 disabled:opacity-50"
           title={
             systemResetCooldownRemainingMs > 0
               ? `Cooldown: ${Math.ceil(systemResetCooldownRemainingMs / 1000)}s`

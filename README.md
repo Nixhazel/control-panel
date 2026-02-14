@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# DCS Operator Assessment Simulator
 
-## Getting Started
+A game-based DCS (Distributed Control System) operator monitoring simulator with SHL-style scoring. Built with Next.js (App Router), TypeScript, and Tailwind CSS.
 
-First, run the development server:
+## Quick start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open **http://localhost:3000** and click **Launch Simulator**, or go directly to **http://localhost:3000/simulator**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Why you see the default page
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- The **home page** is at `/` (root). This project’s root now shows a short landing with a **Launch Simulator** button.
+- The **simulator** lives at **`/simulator`**. If you visit only `http://localhost:3000`, you get the home page; you must open `/simulator` (or use the button) to run the assessment.
 
-## Learn More
+## Full user guide
 
-To learn more about Next.js, take a look at the following resources:
+For a complete step-by-step guide (how to run the app, every panel, every rule, scoring, results, and troubleshooting), see:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **[SIMULATOR_GUIDE.md](./SIMULATOR_GUIDE.md)** — How to use this application in full detail.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech stack
 
-## Deploy on Vercel
+- Next.js 16 (App Router)
+- TypeScript
+- Tailwind CSS
+- No backend, no database, no auth — runs entirely in the browser (localStorage for attempt history).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/simulator/page.tsx` — Main simulator UI and game loop
+- `app/components/` — Timer, ScorePanel, GeneratorPanel, StabilizerPanel, TemperaturePanel, GasPanel, ControlButtons, ResultsScreen
+- `app/lib/` — gameEngine, scoringEngine, personalityEngine, randomizer, storage
+- `types/gameTypes.ts` — Shared types and constants
+
+## Scripts
+
+| Command        | Description              |
+|----------------|--------------------------|
+| `npm run dev`  | Start dev server         |
+| `npm run build`| Production build         |
+| `npm run start`| Run production build     |

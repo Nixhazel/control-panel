@@ -46,6 +46,8 @@ export interface ActionRecord {
   correct: boolean;
   /** Was action required at all (vs unnecessary press) */
   wasRequired: boolean;
+  /** Elapsed seconds since game start (for Phase 3 stress tolerance) */
+  elapsedSeconds?: number;
 }
 
 export interface ScoreState {
@@ -75,6 +77,8 @@ export type OperatorClassification =
   | "Needs Improvement"
   | "High Risk Operator";
 
+export type PassFailStatus = "PASS" | "FAIL";
+
 export interface AssessmentResult {
   finalScore: number;
   accuracyPercent: number;
@@ -82,6 +86,32 @@ export interface AssessmentResult {
   personality: PersonalityTraits;
   passed: boolean;
   classification: OperatorClassification;
+  status: PassFailStatus;
+}
+
+/** Final score summary for results screen and persistence */
+export interface FinalScoreData {
+  finalScore: number;
+  accuracy: number;
+  averageReaction: number;
+  totalCorrect: number;
+  totalIncorrect: number;
+  totalMissed: number;
+  unnecessaryActions: number;
+  totalEvents: number;
+  reactionTimes: number[];
+}
+
+/** Stored attempt for localStorage */
+export interface StoredAttempt {
+  id: string;
+  date: string;
+  finalScore: number;
+  accuracy: number;
+  averageReaction: number;
+  personality: PersonalityTraits;
+  classification: OperatorClassification;
+  status: PassFailStatus;
 }
 
 /** Red zone thresholds (from spec) */
@@ -97,8 +127,10 @@ export const RED_ZONE = {
 /** Generator low threshold for "press ON" */
 export const GENERATOR_LOW = 40;
 
-/** Session duration in seconds */
-export const SESSION_DURATION_SECONDS = 5 * 60;
+/** Session duration in seconds (8 minutes) */
+export const GAME_DURATION_SECONDS = 480;
+/** @deprecated Use GAME_DURATION_SECONDS */
+export const SESSION_DURATION_SECONDS = GAME_DURATION_SECONDS;
 
 /** Tick interval in ms */
 export const TICK_MS = 1500;
@@ -108,3 +140,6 @@ export const REQUIRED_ACTION_WINDOW_MS = 3000;
 
 /** System reset cooldown (ms) - cannot spam */
 export const SYSTEM_RESET_COOLDOWN_MS = 10000;
+
+/** Time penalty (seconds) deducted when operator uses System Reset */
+export const SYSTEM_RESET_TIME_PENALTY_SECONDS = 5;

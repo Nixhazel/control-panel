@@ -2,7 +2,12 @@
  * Scoring: correct/incorrect/missed/unnecessary actions, reaction time, and score deltas.
  */
 
-import type { ScoreState, ActionRecord, ActionType } from "@/types/gameTypes";
+import type {
+  ScoreState,
+  ActionRecord,
+  ActionType,
+  FinalScoreData,
+} from "@/types/gameTypes";
 import type { GameState } from "@/types/gameTypes";
 import { evaluateUserAction } from "./gameEngine";
 
@@ -33,12 +38,14 @@ export function createInitialScoreState(): ScoreState {
 
 /**
  * Record a user action and update score. Returns new ScoreState.
+ * gameStartTimeMs: when the game started (for elapsedSeconds on Phase 3 stress).
  */
 export function recordAction(
   scoreState: ScoreState,
   gameState: GameState,
   actionType: ActionType,
-  now: number
+  now: number,
+  gameStartTimeMs?: number
 ): ScoreState {
   const { systemState, temperatureSpikeCount } = gameState;
   const evalResult = evaluateUserAction(actionType, systemState, temperatureSpikeCount);
@@ -54,6 +61,8 @@ export function recordAction(
     scoreState.pendingRequiredActionAt != null
       ? now - scoreState.pendingRequiredActionAt
       : null;
+  const elapsedSeconds =
+    gameStartTimeMs != null ? Math.floor((now - gameStartTimeMs) / 1000) : undefined;
 
   if (actionType === "NONE") {
     return scoreState;
@@ -75,6 +84,7 @@ export function recordAction(
       reactionTimeMs,
       correct: evalResult.correct,
       wasRequired: true,
+      elapsedSeconds,
     });
   } else {
     delta = SCORE.UNNECESSARY;
@@ -85,6 +95,7 @@ export function recordAction(
       reactionTimeMs: null,
       correct: false,
       wasRequired: false,
+      elapsedSeconds,
     });
   }
 
@@ -148,4 +159,46 @@ export function getAverageReactionMs(scoreState: ScoreState): number {
   if (withTime.length === 0) return 0;
   const sum = withTime.reduce((s, a) => s + (a.reactionTimeMs ?? 0), 0);
   return Math.round(sum / withTime.length);
+}
+
+/**
+ * Reaction times array (ms) for required actions that had a reaction time.
+ */
+export function getReactionTimes(scoreState: ScoreState): number[] {
+  return scoreState.actionHistory
+    .filter((a) => a.wasRequired && a.reactionTimeMs != null)
+    .map((a) => a.reactionTimeMs as number);
+}
+
+/**
+ * Total events = correct + incorrect + missed (required-action opportunities).
+ */
+export function getTotalEvents(scoreState: ScoreState): number {
+  return (
+    scoreState.correctActions +
+    scoreState.incorrectActions +
+    scoreState.missedActions
+  );
+}
+
+/**
+ * Structured final score data for results and classification.
+ */
+export function getFinalScoreData(scoreState: ScoreState): FinalScoreData {
+  const totalEvents = getTotalEvents(scoreState);
+  const accuracy =
+    totalEvents === 0
+      ? 100
+      : Math.round((scoreState.correctActions / totalEvents) * 100);
+  return {
+    finalScore: scoreState.totalScore,
+    accuracy,
+    averageReaction: getAverageReactionMs(scoreState),
+    totalCorrect: scoreState.correctActions,
+    totalIncorrect: scoreState.incorrectActions,
+    totalMissed: scoreState.missedActions,
+    unnecessaryActions: scoreState.unnecessaryActions,
+    totalEvents,
+    reactionTimes: getReactionTimes(scoreState),
+  };
 }

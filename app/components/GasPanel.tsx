@@ -2,6 +2,9 @@
 
 import { RED_ZONE } from "@/types/gameTypes";
 
+const O2_RED = RED_ZONE.O2_LOW;
+const CO2_RED = RED_ZONE.CO2_HIGH;
+
 interface GasPanelProps {
   o2: number;
   co2: number;
@@ -38,8 +41,14 @@ export default function GasPanel({
   onAlarm,
   disabled,
 }: GasPanelProps) {
+  const inDanger = o2 < O2_RED || co2 > CO2_RED;
   return (
-    <div className="rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-3 shadow-lg">
+    <div
+      className={
+        "rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-3 shadow-lg transition-shadow " +
+        (inDanger ? "panel-red-glow pulse-red" : "")
+      }
+    >
       <div className="mb-2 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
         O₂ / CO₂
       </div>
@@ -52,7 +61,7 @@ export default function GasPanel({
           type="button"
           onClick={onReset}
           disabled={disabled}
-          className="flex-1 rounded-lg bg-slate-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-500 disabled:opacity-50"
+          className="btn-press flex-1 rounded-lg bg-slate-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-500 disabled:opacity-50"
         >
           RESET
         </button>
@@ -60,7 +69,7 @@ export default function GasPanel({
           type="button"
           onClick={onAlarm}
           disabled={disabled}
-          className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
+          className="btn-press flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-50"
         >
           ALARM
         </button>

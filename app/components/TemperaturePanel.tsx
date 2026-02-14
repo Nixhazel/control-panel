@@ -23,7 +23,12 @@ export default function TemperaturePanel({
   const displayHistory = history.slice(-MAX_HISTORY);
 
   return (
-    <div className="rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-3 shadow-lg">
+    <div
+      className={
+        "rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-3 shadow-lg transition-shadow " +
+        (isRed ? "panel-red-glow pulse-red" : "")
+      }
+    >
       <div className="mb-2 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
         Temperature
       </div>
@@ -53,7 +58,7 @@ export default function TemperaturePanel({
             type="button"
             onClick={onHigh}
             disabled={disabled}
-            className="rounded bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+            className="btn-press rounded bg-amber-600 px-2 py-1 text-xs font-medium text-white hover:bg-amber-500 disabled:opacity-50"
           >
             HIGH
           </button>
@@ -61,7 +66,7 @@ export default function TemperaturePanel({
             type="button"
             onClick={on3rdHigh}
             disabled={disabled}
-            className="rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
+            className="btn-press rounded bg-red-600 px-2 py-1 text-xs font-medium text-white hover:bg-red-500 disabled:opacity-50"
           >
             3RD HIGH
           </button>

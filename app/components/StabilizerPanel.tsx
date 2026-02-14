@@ -39,8 +39,18 @@ export default function StabilizerPanel({
   onReset,
   disabled,
 }: StabilizerPanelProps) {
+  const inDanger =
+    top < RED_ZONE.STABILIZER_LOW ||
+    top > RED_ZONE.STABILIZER_HIGH ||
+    bottom < RED_ZONE.STABILIZER_LOW ||
+    bottom > RED_ZONE.STABILIZER_HIGH;
   return (
-    <div className="rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-3 shadow-lg">
+    <div
+      className={
+        "rounded-xl border border-slate-600 bg-slate-800/90 px-4 py-3 shadow-lg transition-shadow " +
+        (inDanger ? "panel-red-glow pulse-red" : "")
+      }
+    >
       <div className="mb-3 text-center text-xs font-medium uppercase tracking-wider text-slate-400">
         Stabilizers
       </div>
@@ -53,7 +63,7 @@ export default function StabilizerPanel({
           type="button"
           onClick={onRecentre}
           disabled={disabled}
-          className="flex-1 rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
+          className="btn-press flex-1 rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-amber-500 disabled:opacity-50"
         >
           RECENTRE
         </button>
@@ -61,7 +71,7 @@ export default function StabilizerPanel({
           type="button"
           onClick={onReset}
           disabled={disabled}
-          className="flex-1 rounded-lg bg-slate-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-500 disabled:opacity-50"
+          className="btn-press flex-1 rounded-lg bg-slate-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-slate-500 disabled:opacity-50"
         >
           RESET
         </button>

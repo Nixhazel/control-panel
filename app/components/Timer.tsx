@@ -1,18 +1,54 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 interface TimerProps {
-  timeRemainingSeconds: number;
-  phase: "idle" | "playing" | "ended";
+  /** Total seconds (e.g. 480 for 8 minutes) */
+  initialSeconds: number;
+  isRunning: boolean;
+  onComplete: () => void;
+  /** Seconds to deduct from display and from effective remaining (e.g. system reset penalty) */
+  penaltySeconds?: number;
 }
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function Timer({ timeRemainingSeconds, phase }: TimerProps) {
-  const isLow = timeRemainingSeconds <= 60 && phase === "playing";
+export default function Timer({
+  initialSeconds,
+  isRunning,
+  onComplete,
+  penaltySeconds = 0,
+}: TimerProps) {
+  const [timeRemainingSeconds, setTimeRemainingSeconds] =
+    useState(initialSeconds);
+
+  useEffect(() => {
+    setTimeRemainingSeconds(initialSeconds);
+  }, [initialSeconds]);
+
+  useEffect(() => {
+    if (!isRunning) return;
+    const interval = setInterval(() => {
+      setTimeRemainingSeconds((prev) => {
+        const next = prev - 1;
+        const effectiveRemaining = next - penaltySeconds;
+        if (next <= 0 || effectiveRemaining <= 0) {
+          clearInterval(interval);
+          onComplete();
+          return 0;
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isRunning, onComplete, penaltySeconds]);
+
+  const displaySeconds = Math.max(0, timeRemainingSeconds - penaltySeconds);
+  const isLow = displaySeconds <= 60 && isRunning;
   return (
     <div
       className={
@@ -29,7 +65,7 @@ export default function Timer({ timeRemainingSeconds, phase }: TimerProps) {
           (isLow ? "text-amber-400" : "text-emerald-400")
         }
       >
-        {formatTime(timeRemainingSeconds)}
+        {formatTime(displaySeconds)}
       </div>
     </div>
   );
